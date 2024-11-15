@@ -1,0 +1,14 @@
+﻿#sources: https://hub.docker.com/_/rabbitmq ET https://www.rabbitmq.com/docs/download
+services:
+  rabbitmq:
+    image: rabbitmq:4.0-management
+    ports:
+      - "5672:5672"   # amq messages endpoint
+      - "1883:1883"   # mqtt messages endpoint
+      - "15672:15672" #admin console at http//localhost:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: ict
+      RABBITMQ_DEFAULT_PASS: 321
+    restart: on-failure
+    #auto enable mqtt
+    command: "/bin/bash -c \"rabbitmq-plugins enable --offline rabbitmq_mqtt rabbitmq_web_mqtt rabbitmq_amqp1_0;echo 'Starting broker with updated config, please WAIT'; rabbitmq-server\""
