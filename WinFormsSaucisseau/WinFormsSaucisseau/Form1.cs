@@ -54,6 +54,30 @@ namespace WinFormsSaucisseau
             creatConnection();
         }
 
+        // Méthode pour obtenir la liste des musiques
+        private string GetMusicList()
+        {
+            if (listView1.InvokeRequired)
+            {
+                // Utilisation de BeginInvoke pour accéder au contrôle depuis le thread principal
+                return (string)listView1.Invoke(new Func<string>(GetMusicList));
+            }
+            else
+            {
+                var musicList = new StringBuilder();
+
+                foreach (ListViewItem item in listView1.Items)
+                {
+                    // Ajoutez chaque titre de musique à la chaîne
+                    musicList.AppendLine(item.SubItems[0].Text); // La première colonne contient le titre
+                }
+
+                return musicList.ToString();
+            }
+
+            
+        }
+
         private void InitializeListView()
         {
             // Configuration de la ListView
@@ -86,7 +110,7 @@ namespace WinFormsSaucisseau
 
             if (connectResult.ResultCode == MqttClientConnectResultCode.Success)
             {
-                MessageBox.Show("Connected to MQTT broker successfully.");
+                //MessageBox.Show("Connected to MQTT broker successfully.");
 
                 // Subscribe to a topic
                 await mqttClient.SubscribeAsync(topic);
@@ -94,7 +118,21 @@ namespace WinFormsSaucisseau
                 // Callback function when a message is received
                 mqttClient.ApplicationMessageReceivedAsync += e =>
                 {
-                    MessageBox.Show($"Received message: {Encoding.UTF8.GetString(e.ApplicationMessage.PayloadSegment)}");
+                    string receivedMessage = Encoding.UTF8.GetString(e.ApplicationMessage.PayloadSegment);
+
+                    MessageBox.Show($"Received message: {receivedMessage}");
+
+                    if(receivedMessage.Contains("HELLO") == true)
+                    {
+                        // Obtenez la liste des musiques
+                        string musicList = GetMusicList();
+
+                        // Construisez le message à envoyer
+                        string response = $"{clientId} (Philippe) possède les musiques suivantes :\n{musicList}";
+
+                        sendData(response);
+                    }
+
                     return Task.CompletedTask;
                 };
 
@@ -113,8 +151,8 @@ namespace WinFormsSaucisseau
                 }
             }
         }
-
-        private async void button1_Click_1(object sender, EventArgs e)
+        
+        private async void sendData(string data)
         {
             // Créez un client MQTT
             var factory = new MqttFactory();
@@ -138,7 +176,7 @@ namespace WinFormsSaucisseau
                 // Publier un message
                 var message = new MqttApplicationMessageBuilder()
                     .WithTopic(topic)
-                    .WithPayload("HELLO, qui a des musiques")
+                    .WithPayload(data)
                     .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
                     .WithRetainFlag()
                     .Build();
@@ -151,6 +189,10 @@ namespace WinFormsSaucisseau
             {
                 MessageBox.Show("Failed to connect to MQTT broker.");
             }
+        }
+        private async void button1_Click_1(object sender, EventArgs e)
+        {
+            sendData("HELLO, qui a des musiques");
         }
     }
 }
