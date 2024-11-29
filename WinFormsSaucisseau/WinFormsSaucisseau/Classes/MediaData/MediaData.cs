@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinFormsSaucisseau.Classes.MediaData
+namespace WinFormsSaucisseau
 {
     public class MediaData
     {

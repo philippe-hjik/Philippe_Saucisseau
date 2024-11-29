@@ -28,6 +28,9 @@ namespace WinFormsSaucisseau
         string username = "ict";
         string password = "321";
         
+        // Catalogue de mes musiques
+        List<MediaData> catalogue = new List<MediaData>();
+
         private void Form1_Load(object sender, EventArgs e)
         {
             // Vous pouvez spécifier un dossier ici
