@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinFormsSaucisseau.Classes.MediaData;
+using WinFormsSaucisseau;
 
-namespace WinFormsSaucisseau.Classes.Enveloppes
+namespace WinFormsSaucisseau.Classes.MediaData
 {
     public class EnveloppeEnvoieCatalogue
     {
