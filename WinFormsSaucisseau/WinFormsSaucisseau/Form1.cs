@@ -203,15 +203,3 @@ namespace WinFormsSaucisseau
         }
     }
 }
-/*
-                // Publier un message
-                var message = new MqttApplicationMessageBuilder()
-                    .WithTopic(topic)
-                    .WithPayload(data)
-                    .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
-                    .WithRetainFlag()
-                    .Build();
-
-                // Publier le message
-                await mqttClient.PublishAsync(message);
-*/
