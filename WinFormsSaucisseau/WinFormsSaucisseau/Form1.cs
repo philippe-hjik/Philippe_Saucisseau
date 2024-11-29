@@ -5,6 +5,9 @@ using System.Windows.Forms;
 using System.Text;
 using MQTTnet.Adapter;
 using MQTTnet.Channel;
+using TagLib;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using System.Diagnostics;
 
 namespace WinFormsSaucisseau
 {
@@ -27,9 +30,8 @@ namespace WinFormsSaucisseau
         string topic = "test";
         string username = "ict";
         string password = "321";
-        
-        // Catalogue de mes musiques
-        List<MediaData> catalogue = new List<MediaData>();
+
+        List<MediaData> list;
 
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -39,17 +41,27 @@ namespace WinFormsSaucisseau
             // Vérifiez que le dossier existe
             if (Directory.Exists(dossierMusique))
             {
-                // Récupérer tous les fichiers .mp3 et .wav du dossier
+                // Récupérer tous les fichiers .mp3 du dossier
                 string[] fichiersAudio = Directory.GetFiles(dossierMusique, "*.mp3");
+                list = new List<MediaData>();
 
                 foreach (var fichier in fichiersAudio)
                 {
-                    // Obtenir le nom du fichier sans le chemin
-                    string nomFichier = Path.GetFileName(fichier);
-                    string tailleFichier = new FileInfo(fichier).Length.ToString();
+                    MediaData data = new MediaData();
+                    TagLib.File musicinfo = TagLib.File.Create(fichier);
+
+                    data.File_name = musicinfo.Tag.Title;
+                    data.File_artist = musicinfo.Tag.FirstPerformer;
+                    data.File_type = Path.GetExtension(fichier);
+                    data.File_size = musicinfo.Length;
+
+                    TimeSpan duration = musicinfo.Properties.Duration;
+                    data.File_duration = $"{duration.Minutes:D2}:{duration.Seconds:D2}";
+
+                    list.Add(data);
 
                     // Ajouter le fichier à la ListView
-                    listView1.Items.Add(new ListViewItem(new[] { nomFichier, tailleFichier }));
+                    listView1.Items.Add(new ListViewItem(new[] { data.File_name, data.File_artist, data.File_type, data.File_duration }));
                 }
             }
             else
@@ -90,8 +102,11 @@ namespace WinFormsSaucisseau
             // Configuration de la ListView
             listView1.View = View.Details;
             listView1.FullRowSelect = true;
-            listView1.Columns.Add("Titre", 200); // Colonne pour les titres de musique
+            listView1.Columns.Add("Titre", 200);     // Colonne pour les titres de musique
+            listView1.Columns.Add("Artiste", 200);  // Colonne pour les titres de musique
+            listView1.Columns.Add("Type", 100);    // Colonne pour la taille du fichier
             listView1.Columns.Add("Taille", 100); // Colonne pour la taille du fichier
+            listView1.Columns.Add("Durée", 100); // Colonne pour la taille du fichier
 
             // Attacher un gestionnaire d'événement pour double-clic
             // listView1.MouseDoubleClick += ListView1_MouseDoubleClick;
