@@ -192,8 +192,8 @@ namespace WinFormsSaucisseau
             await mqttClient.PublishAsync(message);
             await Task.Delay(1000); // Wait for 1 second
 
-            await mqttClient.UnsubscribeAsync(topic);
-            await mqttClient.DisconnectAsync();
+            mqttClient.UnsubscribeAsync(topic);
+            mqttClient.DisconnectAsync();
 
         }
         
