@@ -131,7 +131,7 @@ namespace WinFormsSaucisseau
                 {
                     string receivedMessage = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
 
-                    MessageBox.Show($"Received message: {receivedMessage}");
+                    //MessageBox.Show($"Received message: {receivedMessage}");
 
                     if (receivedMessage.Contains("HELLO") == true)
                     {
@@ -156,7 +156,7 @@ namespace WinFormsSaucisseau
                             .Build();
 
                         // Envoyez le message
-                        await mqttClient.PublishAsync(message);
+                        mqttClient.PublishAsync(message);
                         Console.WriteLine("Message sent successfully!");
                     }
 
