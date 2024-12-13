@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace WinFormsSaucisseau.Classes.Enveloppes
 {
-    public class EnveloppeEnvoieFichier
+    public class EnvoieFichier
     {
         /* 
             type 3 ENVOIE_FICHIER

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace WinFormsSaucisseau.Classes.Enveloppes
 {
-    public class EnveloppeDemandeCatalogue
+    public class DemandeCatalogue
     {
         /* 
             type 2 DEMANDE_CATALOGUE

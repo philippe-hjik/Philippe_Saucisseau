@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace WinFormsSaucisseau
 {
-    public class EnveloppeEnvoieCatalogue
+    public class EnvoieCatalogue
     {
         /* 
             type 1 ENVOIE_CATALOGUE

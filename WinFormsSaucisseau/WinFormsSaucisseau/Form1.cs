@@ -8,6 +8,9 @@ using MQTTnet.Channel;
 using TagLib;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using System.Diagnostics;
+using System.Text.Json;
+using WinFormsSaucisseau.Classes;
+using WinFormsSaucisseau.Classes.Enveloppes;
 
 namespace WinFormsSaucisseau
 {
@@ -21,7 +24,7 @@ namespace WinFormsSaucisseau
 
         private IMqttClient mqttClient; // Client MQTT global
         private MqttClientOptions mqttOptions; // Options de connexion globales
-                                               
+
         private MqttClientFactory factory = new MqttClientFactory();
 
         string broker = "mqtt.blue.section-inf.ch";
@@ -112,6 +115,17 @@ namespace WinFormsSaucisseau
             // listView1.MouseDoubleClick += ListView1_MouseDoubleClick;
         }
 
+        public void getMssages()
+        {
+            if(mqttClient != null)
+            {
+                mqttClient.ApplicationMessageReceivedAsync += e =>
+                {
+                    ReiceiveMessage(e);
+                    return Task.CompletedTask;
+                };
+            }
+        }
         public async void creatConnection()
         {
 
@@ -149,8 +163,6 @@ namespace WinFormsSaucisseau
                 {
                     string receivedMessage = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
 
-                    //MessageBox.Show($"Received message: {receivedMessage}");
-
                     if (receivedMessage.Contains("HELLO") == true)
                     {
                         // Obtenez la liste des musiques
@@ -179,43 +191,68 @@ namespace WinFormsSaucisseau
                     }
 
                     return;
+
+                    ReiceiveMessage(e);
                 };
+
+
 
             }
         }
-       
+
+
+        private void ReiceiveMessage(MqttApplicationMessageReceivedEventArgs message)
+        {
+            try
+            {
+                Debug.Write(Encoding.UTF8.GetString(message.ApplicationMessage.Payload));
+                GenericEnvelope enveloppe = JsonSerializer.Deserialize<GenericEnvelope>(Encoding.UTF8.GetString(message.ApplicationMessage.Payload));
+                if (enveloppe.SenderId == clientId) return;
+                switch (enveloppe.MessageType)
+                {
+                    case MessageType.ENVOIE_CATALOGUE:
+                        {
+                            EnvoieCatalogue enveloppeEnvoieCatalogue = JsonSerializer.Deserialize<EnvoieCatalogue>(enveloppe.EnveloppeJson);
+                            break;
+                        }
+                    case MessageType.DEMANDE_CATALOGUE:
+                        {
+                            EnvoieCatalogue envoieCatalogue = new EnvoieCatalogue();
+                            envoieCatalogue.Content = _maListMediaData;
+                            SendMessage(mqttClient, MessageType.ENVOIE_CATALOGUE, clientId, envoieCatalogue, "test");
+                            break;
+                        }
+                    case MessageType.ENVOIE_FICHIER:
+                        {
+                            EnvoieFichier enveloppeEnvoieFichier = JsonSerializer.Deserialize<EnvoieFichier>(enveloppe.EnveloppeJson);
+                            break;
+                        }
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+            }
+        }
+
         private async void SendData(string data)
         {
-            // Create a MQTT client instance
-            var mqttClient = factory.CreateMqttClient();
-
-            // Create MQTT client options
-            var options = new MqttClientOptionsBuilder()
-                .WithTcpServer(broker, port) // MQTT broker address and port
-                .WithCredentials(username, password) // Set username and password
-                .WithClientId(clientId)
-                .WithCleanSession()
+            // Créez le message à envoyer
+            var message = new MqttApplicationMessageBuilder()
+                .WithTopic(topic)
+                .WithPayload(data)
+                .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
+                .WithRetainFlag(false)
                 .Build();
 
-            // Connectez-vous au broker MQTT
-            var connectResult = await mqttClient.ConnectAsync(options);
-
-            var message = new MqttApplicationMessageBuilder()
-                    .WithTopic(topic)
-                    .WithPayload(data)
-                    .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
-                    .WithRetainFlag()
-                    .Build();
-
-            await mqttClient.PublishAsync(message);
-            await Task.Delay(1000); // Wait for 1 second
-
-            mqttClient.UnsubscribeAsync(topic);
-            mqttClient.DisconnectAsync();
-
+            // Envoyez le message
+            mqttClient.PublishAsync(message);
+            Console.WriteLine("Message sent successfully!");
         }
-        
-        private async void button1_Click_1(object sender, EventArgs e)
+
+        private void button1_Click(object sender, EventArgs e)
         {
             SendData("HELLO, qui a des musiques");
         }
