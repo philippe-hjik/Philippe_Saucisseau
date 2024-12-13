@@ -8,7 +8,7 @@ using WinFormsSaucisseau.Classes.Interfaces;
 
 namespace WinFormsSaucisseau
 {
-    public class EnvoieCatalogue
+    public class EnvoieCatalogue : IJsonSerializableMessage
     {
         /* 
             type 1 ENVOIE_CATALOGUE
@@ -17,7 +17,7 @@ namespace WinFormsSaucisseau
 
         public string ToJson()
         {
-            return JsonSerializer.Serialize(this);
+            return JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
         }
     }
 }

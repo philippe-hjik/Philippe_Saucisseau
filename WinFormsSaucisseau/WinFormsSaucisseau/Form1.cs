@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using WinFormsSaucisseau.Classes;
 using WinFormsSaucisseau.Classes.Enveloppes;
+using WinFormsSaucisseau.Classes.Interfaces;
 
 namespace WinFormsSaucisseau
 {
@@ -53,7 +54,7 @@ namespace WinFormsSaucisseau
                     MediaData data = new MediaData();
                     TagLib.File musicinfo = TagLib.File.Create(fichier);
 
-                    data.File_name = musicinfo.Tag.Title;
+                    data.File_name = musicinfo.Tag.Title + Path.GetExtension(fichier);
                     data.File_artist = musicinfo.Tag.FirstPerformer;
                     data.File_type = Path.GetExtension(fichier);
                     data.File_size = musicinfo.Length;
@@ -91,7 +92,7 @@ namespace WinFormsSaucisseau
                 foreach (ListViewItem item in listView1.Items)
                 {
                     // Ajoutez chaque titre de musique à la chaîne
-                    musicList.AppendLine(item.SubItems[0].Text); // La première colonne contient le titre
+                    musicList.AppendLine(item.Text); // La première colonne contient le titre
                 }
 
                 return musicList.ToString();
@@ -190,14 +191,17 @@ namespace WinFormsSaucisseau
                         Console.WriteLine("Message sent successfully!");
                     }
 
+                    ReiceiveMessage(e);
+
                     return;
 
-                    ReiceiveMessage(e);
+                
                 };
 
 
 
             }
+            getMssages();
         }
 
 
@@ -218,7 +222,7 @@ namespace WinFormsSaucisseau
                     case MessageType.DEMANDE_CATALOGUE:
                         {
                             EnvoieCatalogue envoieCatalogue = new EnvoieCatalogue();
-                            envoieCatalogue.Content = _maListMediaData;
+                            envoieCatalogue.Content = list;
                             SendMessage(mqttClient, MessageType.ENVOIE_CATALOGUE, clientId, envoieCatalogue, "test");
                             break;
                         }
@@ -228,13 +232,27 @@ namespace WinFormsSaucisseau
                             break;
                         }
                 }
-
-
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.ToString());
             }
+        }
+
+        private async void SendMessage(IMqttClient mqttClient, MessageType type, string senderId, IJsonSerializableMessage content, string topic)
+        {
+            GenericEnvelope enveloppe = new GenericEnvelope();
+            enveloppe.SenderId = senderId;
+            enveloppe.EnveloppeJson = content == null ? null : content.ToJson();
+            enveloppe.MessageType = type;
+            var message = new MqttApplicationMessageBuilder()
+                .WithTopic(topic)
+                .WithPayload(JsonSerializer.Serialize(enveloppe))
+                .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtMostOnce)
+                .Build();
+
+            await mqttClient.PublishAsync(message);
+            await Task.Delay(1000);
         }
 
         private async void SendData(string data)
@@ -255,6 +273,8 @@ namespace WinFormsSaucisseau
         private void button1_Click(object sender, EventArgs e)
         {
             SendData("HELLO, qui a des musiques");
+
+            SendMessage(mqttClient, MessageType.DEMANDE_CATALOGUE, clientId, null, "test");
         }
     }
 }
