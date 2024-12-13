@@ -204,6 +204,7 @@ namespace WinFormsSaucisseau
             getMssages();
         }
 
+        public Dictionary<string, List<MediaData>> mediaDataWithOwner = new Dictionary<string, List<MediaData>>();
 
         private void ReiceiveMessage(MqttApplicationMessageReceivedEventArgs message)
         {
@@ -217,6 +218,18 @@ namespace WinFormsSaucisseau
                     case MessageType.ENVOIE_CATALOGUE:
                         {
                             EnvoieCatalogue enveloppeEnvoieCatalogue = JsonSerializer.Deserialize<EnvoieCatalogue>(enveloppe.EnveloppeJson);
+
+                            // Mets à jour le catalogue de qqn ou le rajout dans un dictionnaire
+                            if (mediaDataWithOwner.ContainsKey(enveloppe.SenderId))
+                            {
+                                mediaDataWithOwner[enveloppe.SenderId] = enveloppeEnvoieCatalogue.Content;
+                            }
+                            else
+                            {
+                                mediaDataWithOwner.Add(enveloppe.SenderId, new List<MediaData>());
+                                mediaDataWithOwner[enveloppe.SenderId] = enveloppeEnvoieCatalogue.Content;
+                            }
+
                             break;
                         }
                     case MessageType.DEMANDE_CATALOGUE:
