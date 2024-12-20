@@ -11,10 +11,11 @@ namespace WinFormsSaucisseau.Classes.Enveloppes
     public class EnvoieFichier
     {
         /* 
-            type 3 ENVOIE_FICHIER
+            type 4 ENVOIE_FICHIER
          */
 
         public string Content { get; set; }
+        public MediaData FileInfo { get; set; }
 
         public string ToJson()
         {

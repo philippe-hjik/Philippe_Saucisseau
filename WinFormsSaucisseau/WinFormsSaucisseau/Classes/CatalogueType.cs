@@ -10,7 +10,8 @@ namespace WinFormsSaucisseau.Classes
     {
         ENVOIE_CATALOGUE,
         ENVOIE_FICHIER,
-        DEMANDE_CATALOGUE
+        DEMANDE_CATALOGUE,
+        DEMANDE_FICHIER
     }
 
     public class GenericEnvelope

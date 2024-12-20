@@ -5,7 +5,6 @@ using System.Windows.Forms;
 using System.Text;
 using MQTTnet.Adapter;
 using MQTTnet.Channel;
-using TagLib;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using System.Diagnostics;
 using System.Text.Json;
@@ -31,16 +30,18 @@ namespace WinFormsSaucisseau
         string broker = "mqtt.blue.section-inf.ch";
         int port = 1883;
         string clientId = Guid.NewGuid().ToString();
-        string topic = "test";
+        string topic = "global";
         string username = "ict";
         string password = "321";
+
+        // Vous pouvez spécifier un dossier ici
+        string dossierMusique = @"C:\Users\pf25xeu\Desktop\musique"; // Remplacez par votre dossier
 
         List<MediaData> list;
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            // Vous pouvez spécifier un dossier ici
-            string dossierMusique = @"C:\Users\pf25xeu\Desktop\musique"; // Remplacez par votre dossier
+            
 
             // Vérifiez que le dossier existe
             if (Directory.Exists(dossierMusique))
@@ -99,7 +100,6 @@ namespace WinFormsSaucisseau
 
                 return musicList.ToString();
             }
-
 
         }
 
@@ -216,7 +216,7 @@ namespace WinFormsSaucisseau
                         {
                             EnvoieCatalogue enveloppeEnvoieCatalogue = JsonSerializer.Deserialize<EnvoieCatalogue>(enveloppe.EnveloppeJson);
 
-                            // Mets à jour le catalogue de qqn ou le rajout dans un dictionnaire
+                            // Mets à jour le catalogue de qqn ou le rajoute dans un dictionnaire
                             if (mediaDataWithOwner.ContainsKey(enveloppe.SenderId))
                             {
                                 mediaDataWithOwner[enveloppe.SenderId] = enveloppeEnvoieCatalogue.Content;
@@ -233,12 +233,22 @@ namespace WinFormsSaucisseau
                         {
                             EnvoieCatalogue envoieCatalogue = new EnvoieCatalogue();
                             envoieCatalogue.Content = list;
-                            SendMessage(mqttClient, MessageType.ENVOIE_CATALOGUE, clientId, envoieCatalogue, "test");
+                            SendMessage(mqttClient, MessageType.ENVOIE_CATALOGUE, clientId, envoieCatalogue, topic);
                             break;
                         }
                     case MessageType.ENVOIE_FICHIER:
                         {
                             EnvoieFichier enveloppeEnvoieFichier = JsonSerializer.Deserialize<EnvoieFichier>(enveloppe.EnveloppeJson);
+                            break;
+                        }
+                    case MessageType.DEMANDE_FICHIER:
+                        {
+                            DemandeFichier enveloppeDemandeFichier = JsonSerializer.Deserialize<DemandeFichier>(enveloppe.EnveloppeJson);
+                            EnvoieFichier envoiFichier = new EnvoieFichier();
+
+                            envoiFichier.Content = Convert.ToBase64String(File.ReadAllBytes(dossierMusique + enveloppeDemandeFichier.FileName));
+
+                            //SendMessage(mqttClient,MessageType.ENVOIE_FICHIER, clientId, envoiFichier, enveloppe.SenderId);
                             break;
                         }
                 }
@@ -284,7 +294,7 @@ namespace WinFormsSaucisseau
         {
             SendData("HELLO, qui a des musiques");
 
-            SendMessage(mqttClient, MessageType.DEMANDE_CATALOGUE, clientId, null, "test");
+            SendMessage(mqttClient, MessageType.DEMANDE_CATALOGUE, clientId, null, topic);
         }
     }
 }
