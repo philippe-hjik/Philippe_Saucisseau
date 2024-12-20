@@ -196,12 +196,7 @@ namespace WinFormsSaucisseau
                     ReiceiveMessage(e);
 
                     return;
-
-                
                 };
-
-
-
             }
             getMssages();
         }
