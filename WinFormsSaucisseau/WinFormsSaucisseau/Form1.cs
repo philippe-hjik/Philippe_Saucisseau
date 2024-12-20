@@ -54,7 +54,7 @@ namespace WinFormsSaucisseau
                     MediaData data = new MediaData();
                     TagLib.File musicinfo = TagLib.File.Create(fichier);
 
-                    data.File_name = musicinfo.Tag.Title + Path.GetExtension(fichier);
+                    data.File_title = musicinfo.Tag.Title;
                     data.File_artist = musicinfo.Tag.FirstPerformer;
                     data.File_type = Path.GetExtension(fichier);
                     data.File_size = musicinfo.Length;
@@ -62,10 +62,12 @@ namespace WinFormsSaucisseau
                     TimeSpan duration = musicinfo.Properties.Duration;
                     data.File_duration = $"{duration.Minutes:D2}:{duration.Seconds:D2}";
 
+                    data.File_name = musicinfo.Tag.Title + Path.GetExtension(fichier);
+
                     list.Add(data);
 
                     // Ajouter le fichier à la ListView
-                    listView1.Items.Add(new ListViewItem(new[] { data.File_name, data.File_artist, data.File_type, data.File_duration }));
+                    listView1.Items.Add(new ListViewItem(new[] { data.File_title, data.File_artist, data.File_type, data.File_duration, data.File_name }));
                 }
             }
             else
@@ -110,8 +112,8 @@ namespace WinFormsSaucisseau
             listView1.Columns.Add("Artiste", 200);  // Colonne pour les titres de musique
             listView1.Columns.Add("Type", 100);    // Colonne pour la taille du fichier
             listView1.Columns.Add("Taille", 100); // Colonne pour la taille du fichier
-            listView1.Columns.Add("Durée", 100); // Colonne pour la taille du fichier
-
+            listView1.Columns.Add("nom", 100);   // Colonne pour le nom du fichier pour le download
+ 
             // Attacher un gestionnaire d'événement pour double-clic
             // listView1.MouseDoubleClick += ListView1_MouseDoubleClick;
         }
