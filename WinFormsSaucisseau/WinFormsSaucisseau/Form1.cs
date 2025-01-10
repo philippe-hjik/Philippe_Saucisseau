@@ -5,12 +5,15 @@ using System.Windows.Forms;
 using System.Text;
 using MQTTnet.Adapter;
 using MQTTnet.Channel;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+
 using System.Diagnostics;
 using System.Text.Json;
 using WinFormsSaucisseau.Classes;
 using WinFormsSaucisseau.Classes.Enveloppes;
 using WinFormsSaucisseau.Classes.Interfaces;
+using static System.Windows.Forms.DataFormats;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WinFormsSaucisseau
 {
@@ -19,7 +22,10 @@ namespace WinFormsSaucisseau
         public Form1()
         {
             InitializeComponent();
-            InitializeListView();
+            InitializeListView(listView1);
+            InitializeListView(listView2);
+            listView2.Columns.Add("PersonId", 150);   // Colonne pour le nom du fichier pour le download
+
         }
 
         private IMqttClient mqttClient; // Client MQTT global
@@ -30,9 +36,12 @@ namespace WinFormsSaucisseau
         string broker = "mqtt.blue.section-inf.ch";
         int port = 1883;
         string clientId = Guid.NewGuid().ToString();
-        string topic = "philippe";
+        string topic = "global";
         string username = "ict";
         string password = "321";
+
+        private System.Windows.Forms.ListView listView2 = new System.Windows.Forms.ListView();
+
 
         // Vous pouvez spécifier un dossier ici
         string dossierMusique = @"C:\Users\pf25xeu\Desktop\musique"; // Remplacez par votre dossier
@@ -105,24 +114,35 @@ namespace WinFormsSaucisseau
 
         }
 
-        private void InitializeListView()
+        private void InitializeListView(System.Windows.Forms.ListView listView)
         {
             // Configuration de la ListView
-            listView1.View = View.Details;
-            listView1.FullRowSelect = true;
-            listView1.Columns.Add("Titre", 200);     // Colonne pour les titres de musique
-            listView1.Columns.Add("Artiste", 200);  // Colonne pour les titres de musique
-            listView1.Columns.Add("Type", 100);    // Colonne pour la taille du fichier
-            listView1.Columns.Add("Taille", 100); // Colonne pour la taille du fichier
-            listView1.Columns.Add("nom", 100);   // Colonne pour le nom du fichier pour le download
- 
-            // Attacher un gestionnaire d'événement pour double-clic
+            listView.View = View.Details;
+            listView.FullRowSelect = true;
+            listView.Columns.Add("Titre", 200);     // Colonne pour les titres de musique
+            listView.Columns.Add("Artiste", 200);  // Colonne pour les titres de musique
+            listView.Columns.Add("Type", 100);    // Colonne pour la taille du fichier
+            listView.Columns.Add("Taille", 100); // Colonne pour la taille du fichier
+            listView.Columns.Add("nom", 100);   // Colonne pour le nom du fichier pour le download
+
+              // Attacher un gestionnaire d'événement pour double-clic
             // listView1.MouseDoubleClick += ListView1_MouseDoubleClick;
+        }
+
+        private void updateOnlineMusic(Dictionary<string, List<MediaData>> data, GenericEnvelope envelope)
+        {
+            foreach (var item in data)
+            {
+                item.Value.ForEach(data =>
+                {
+                    listView2.Items.Add(new ListViewItem(new[] { data.File_name, data.File_artist, data.File_type, data.File_duration, data.File_name, envelope.SenderId }));
+                });                
+            }
         }
 
         public void getMssages()
         {
-            if(mqttClient != null)
+            if (mqttClient != null)
             {
                 mqttClient.ApplicationMessageReceivedAsync += e =>
                 {
@@ -212,6 +232,7 @@ namespace WinFormsSaucisseau
             try
             {
                 Debug.Write(Encoding.UTF8.GetString(message.ApplicationMessage.Payload));
+
                 GenericEnvelope enveloppe = JsonSerializer.Deserialize<GenericEnvelope>(Encoding.UTF8.GetString(message.ApplicationMessage.Payload));
                 if (enveloppe.SenderId == clientId) return;
                 switch (enveloppe.MessageType)
@@ -230,6 +251,8 @@ namespace WinFormsSaucisseau
                                 mediaDataWithOwner.Add(enveloppe.SenderId, new List<MediaData>());
                                 mediaDataWithOwner[enveloppe.SenderId] = enveloppeEnvoieCatalogue.Content;
                             }
+
+                            updateOnlineMusic(mediaDataWithOwner, enveloppe);
 
                             break;
                         }
@@ -308,9 +331,27 @@ namespace WinFormsSaucisseau
 
         private void button1_Click(object sender, EventArgs e)
         {
-            SendData("HELLO, qui a des musiques");
+            SendMessage(mqttClient, MessageType.DEMANDE_CATALOGUE, clientId, null, topic);
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            // Crée une instance du formulaire à afficher
+            Form form2 = new Form();
+
+            form2.Height = 600;
+            form2.Width = 900;
+
+            form2.Controls.Add(listView2);
+
+            listView2.Width = 850;
+            listView2.Height = 400;
+
+            // Affiche le formulaire
+            form2.Show();
 
             SendMessage(mqttClient, MessageType.DEMANDE_CATALOGUE, clientId, null, topic);
+
         }
     }
 }

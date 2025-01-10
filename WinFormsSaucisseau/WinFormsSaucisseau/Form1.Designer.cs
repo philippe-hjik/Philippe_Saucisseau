@@ -31,6 +31,7 @@
             listView1 = new ListView();
             button1 = new Button();
             label1 = new Label();
+            button2 = new Button();
             SuspendLayout();
             // 
             // listView1
@@ -60,11 +61,22 @@
             label1.TabIndex = 2;
             label1.Text = "label1";
             // 
+            // button2
+            // 
+            button2.Location = new Point(337, 84);
+            button2.Name = "button2";
+            button2.Size = new Size(153, 48);
+            button2.TabIndex = 3;
+            button2.Text = "Explorer les musiques";
+            button2.UseVisualStyleBackColor = true;
+            button2.Click += button2_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(button2);
             Controls.Add(label1);
             Controls.Add(button1);
             Controls.Add(listView1);
@@ -80,5 +92,6 @@
         private ListView listView1;
         private Button button1;
         private Label label1;
+        private Button button2;
     }
 }
