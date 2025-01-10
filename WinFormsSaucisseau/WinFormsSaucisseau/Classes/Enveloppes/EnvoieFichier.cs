@@ -19,7 +19,7 @@ namespace WinFormsSaucisseau.Classes.Enveloppes
 
         public string ToJson()
         {
-            return JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
+            return JsonSerializer.Serialize(this);
         }
 
     }

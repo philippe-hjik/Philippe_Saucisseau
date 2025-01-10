@@ -32,10 +32,10 @@ namespace WinFormsSaucisseau
 
         private MqttClientFactory factory = new MqttClientFactory();
 
-        string broker = "localhost";
+        string broker = "mqtt.blue.section-inf.ch";
         int port = 1883;
         string clientId = Guid.NewGuid().ToString();
-        string topic = "lucastest";
+        string topic = "test";
         string username = "ict";
         string password = "321";
 
@@ -43,7 +43,7 @@ namespace WinFormsSaucisseau
 
 
         // Vous pouvez spécifier un dossier ici
-        string dossierMusique = @"C:\Users\pf25xeu\Desktop\musique"; // Remplacez par votre dossier
+        string dossierMusique = @"C:\BitRuisseau\"; // Remplacez par votre dossier
 
         List<MediaData> list;
 
@@ -216,7 +216,7 @@ namespace WinFormsSaucisseau
                 // Subscribe to a topic
                 await mqttClient.SubscribeAsync(subscribeOptions);
 
-                await mqttClient.SubscribeAsync("philippe");
+                await mqttClient.SubscribeAsync(clientId);
 
                 // Callback function when a message is received
                 mqttClient.ApplicationMessageReceivedAsync += async e =>
@@ -298,31 +298,36 @@ namespace WinFormsSaucisseau
                                 SendMessage(mqttClient, MessageType.ENVOIE_CATALOGUE, clientId, envoieCatalogue, topic);
                                 break;
                             }
-                        case MessageType.DEMANDE_FICHIER:
-                            {
-                                DemandeFichier enveloppeDemandeFichier = JsonSerializer.Deserialize<DemandeFichier>(enveloppe.EnvelopeJson);
-                                EnvoieFichier envoiFichier = new EnvoieFichier();
-
-                                envoiFichier.Content = Convert.ToBase64String(File.ReadAllBytes(dossierMusique + enveloppeDemandeFichier.FileName));
-
-                                SendMessage(mqttClient, MessageType.ENVOIE_FICHIER, clientId, enveloppeDemandeFichier, enveloppe.SenderId);
-
-                                break;
-                            }
                         case MessageType.ENVOIE_FICHIER:
                             {
                                 EnvoieFichier enveloppeEnvoieFichier = JsonSerializer.Deserialize<EnvoieFichier>(enveloppe.EnvelopeJson);
                                 MediaData metaData = enveloppeEnvoieFichier.FileInfo;
                                 byte[] file = Convert.FromBase64String(enveloppeEnvoieFichier.Content);
 
-                                string path = dossierMusique + metaData.Title + metaData.Type;
 
-                                File.WriteAllBytes(path, file);
+                                string dossierMusique = @"C:\BitRuisseau\";
+
+                                File.WriteAllBytes(dossierMusique, file);
 
                                 MessageBox.Show("Téléchargement réussi", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                                 updateMusicList();
 
+                                break;
+                            }
+                        case MessageType.DEMANDE_FICHIER:
+                            {
+                                DemandeFichier enveloppeDemandeFichier = JsonSerializer.Deserialize<DemandeFichier>(enveloppe.EnvelopeJson);
+                                EnvoieFichier envoiFichier = new();
+
+                                string dossierMusique = @"C:\BitRuisseau\";
+
+                                envoiFichier.Content = Convert.ToBase64String(File.ReadAllBytes(dossierMusique + enveloppeDemandeFichier.FileName));
+
+                                string nameWithoutExtension = Path.GetFileNameWithoutExtension(enveloppeDemandeFichier.FileName);
+
+                                SendMessage(mqttClient, MessageType.ENVOIE_FICHIER, clientId, enveloppeDemandeFichier, enveloppe.SenderId);
+                                //blue.section-inf.ch
                                 break;
                             }
                     }
@@ -406,7 +411,7 @@ namespace WinFormsSaucisseau
             string fileArtist = selectedItem.SubItems[1].Text; // Index de la colonne correspondante
             string type = selectedItem.SubItems[2].Text;
 
-            MessageBox.Show($"Vous avez cliqué sur : {fileName}, Artiste : {fileArtist}");
+            MessageBox.Show($"Vous avez cliqué sur : {fileName}{type}, Artiste : {fileArtist}");
 
             SendMessage(mqttClient, MessageType.DEMANDE_FICHIER, clientId, null, selectedItem.SubItems[4].Text);
         }
