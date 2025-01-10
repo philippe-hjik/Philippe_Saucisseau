@@ -30,7 +30,7 @@ namespace WinFormsSaucisseau
         string broker = "mqtt.blue.section-inf.ch";
         int port = 1883;
         string clientId = Guid.NewGuid().ToString();
-        string topic = "global";
+        string topic = "philippe";
         string username = "ict";
         string password = "321";
 
@@ -41,8 +41,6 @@ namespace WinFormsSaucisseau
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            
-
             // Vérifiez que le dossier existe
             if (Directory.Exists(dossierMusique))
             {
@@ -161,6 +159,8 @@ namespace WinFormsSaucisseau
                 // Subscribe to a topic
                 await mqttClient.SubscribeAsync(subscribeOptions);
 
+                await mqttClient.SubscribeAsync(clientId);
+
                 // Callback function when a message is received
                 mqttClient.ApplicationMessageReceivedAsync += async e =>
                 {
@@ -236,11 +236,6 @@ namespace WinFormsSaucisseau
                             SendMessage(mqttClient, MessageType.ENVOIE_CATALOGUE, clientId, envoieCatalogue, topic);
                             break;
                         }
-                    case MessageType.ENVOIE_FICHIER:
-                        {
-                            EnvoieFichier enveloppeEnvoieFichier = JsonSerializer.Deserialize<EnvoieFichier>(enveloppe.EnveloppeJson);
-                            break;
-                        }
                     case MessageType.DEMANDE_FICHIER:
                         {
                             DemandeFichier enveloppeDemandeFichier = JsonSerializer.Deserialize<DemandeFichier>(enveloppe.EnveloppeJson);
@@ -248,7 +243,22 @@ namespace WinFormsSaucisseau
 
                             envoiFichier.Content = Convert.ToBase64String(File.ReadAllBytes(dossierMusique + enveloppeDemandeFichier.FileName));
 
-                            //SendMessage(mqttClient,MessageType.ENVOIE_FICHIER, clientId, envoiFichier, enveloppe.SenderId);
+                            SendMessage(mqttClient, MessageType.ENVOIE_FICHIER, clientId, enveloppeDemandeFichier, enveloppe.SenderId);
+
+                            break;
+                        }
+                    case MessageType.ENVOIE_FICHIER:
+                        {
+                            EnvoieFichier enveloppeEnvoieFichier = JsonSerializer.Deserialize<EnvoieFichier>(enveloppe.EnveloppeJson);
+                            MediaData metaData = enveloppeEnvoieFichier.FileInfo;
+                            byte[] file = Convert.FromBase64String(enveloppeEnvoieFichier.Content);
+
+                            string path = dossierMusique + metaData.File_title + metaData.File_type;
+
+                            File.WriteAllBytes(path, file);
+
+                            MessageBox.Show("Téléchargement réussi", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
                             break;
                         }
                 }
