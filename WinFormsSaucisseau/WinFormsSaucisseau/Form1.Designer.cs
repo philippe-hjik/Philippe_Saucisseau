@@ -85,6 +85,9 @@
             Load += Form1_Load;
             ResumeLayout(false);
             PerformLayout();
+
+            listView2.ItemActivate += listView2_ItemActivate;
+
         }
 
         #endregion

@@ -9,8 +9,8 @@ namespace WinFormsSaucisseau.Classes
     public enum MessageType
     {
         ENVOIE_CATALOGUE,
-        ENVOIE_FICHIER,
         DEMANDE_CATALOGUE,
+        ENVOIE_FICHIER,
         DEMANDE_FICHIER
     }
 
@@ -18,6 +18,6 @@ namespace WinFormsSaucisseau.Classes
     {
         public MessageType MessageType { get; set; }
         public string SenderId { get; set; }
-        public string EnveloppeJson { get; set; }
+        public string EnvelopeJson { get; set; }
     }
 }

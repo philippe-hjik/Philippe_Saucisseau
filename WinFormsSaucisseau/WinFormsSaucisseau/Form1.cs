@@ -25,7 +25,6 @@ namespace WinFormsSaucisseau
             InitializeListView(listView1);
             InitializeListView(listView2);
             listView2.Columns.Add("PersonId", 150);   // Colonne pour le nom du fichier pour le download
-
         }
 
         private IMqttClient mqttClient; // Client MQTT global
@@ -33,10 +32,10 @@ namespace WinFormsSaucisseau
 
         private MqttClientFactory factory = new MqttClientFactory();
 
-        string broker = "mqtt.blue.section-inf.ch";
+        string broker = "localhost";
         int port = 1883;
         string clientId = Guid.NewGuid().ToString();
-        string topic = "global";
+        string topic = "lucastest";
         string username = "ict";
         string password = "321";
 
@@ -68,20 +67,20 @@ namespace WinFormsSaucisseau
                     MediaData data = new MediaData();
                     TagLib.File musicinfo = TagLib.File.Create(fichier);
 
-                    data.File_title = musicinfo.Tag.Title;
-                    data.File_artist = musicinfo.Tag.FirstPerformer;
-                    data.File_type = Path.GetExtension(fichier);
-                    data.File_size = musicinfo.Length;
+                    data.Title = musicinfo.Tag.Title;
+                    data.Artist = musicinfo.Tag.FirstPerformer;
+                    data.Type = Path.GetExtension(fichier);
+
 
                     TimeSpan duration = musicinfo.Properties.Duration;
-                    data.File_duration = $"{duration.Minutes:D2}:{duration.Seconds:D2}";
+                    data.Duration = $"{duration.Minutes:D2}:{duration.Seconds:D2}";
 
-                    data.File_name = musicinfo.Tag.Title + Path.GetExtension(fichier);
+                    //data. = musicinfo.Tag.Title + Path.GetExtension(fichier);
 
                     list.Add(data);
 
                     // Ajouter le fichier à la ListView
-                    listView1.Items.Add(new ListViewItem(new[] { data.File_title, data.File_artist, data.File_type, data.File_duration, data.File_name }));
+                    listView1.Items.Add(new ListViewItem(new[] { data.Title, data.Artist, data.Type, data.Duration, data.Title + data.Type }));
                 }
             }
             else
@@ -125,20 +124,54 @@ namespace WinFormsSaucisseau
             listView.Columns.Add("Taille", 100); // Colonne pour la taille du fichier
             listView.Columns.Add("nom", 100);   // Colonne pour le nom du fichier pour le download
 
-              // Attacher un gestionnaire d'événement pour double-clic
+            // Attacher un gestionnaire d'événement pour double-clic
             // listView1.MouseDoubleClick += ListView1_MouseDoubleClick;
         }
 
         private void updateOnlineMusic(Dictionary<string, List<MediaData>> data, GenericEnvelope envelope)
         {
-            foreach (var item in data)
+            // S'assurer que l'appel est effectué sur le thread de l'interface utilisateur
+            if (listView2.InvokeRequired)
             {
-                item.Value.ForEach(data =>
+                listView2.Invoke(new Action(() => updateOnlineMusic(data, envelope)));
+                return;
+            }
+
+            // Désactiver le rafraîchissement de la ListView pendant l'ajout des éléments pour éviter des redessins inutiles
+            listView2.BeginUpdate();
+            try
+            {
+                // Effacer les anciens éléments de la ListView
+                listView2.Items.Clear();
+
+                // Parcours du dictionnaire des musiques
+                foreach (var item in data)
                 {
-                    listView2.Items.Add(new ListViewItem(new[] { data.File_name, data.File_artist, data.File_type, data.File_duration, data.File_name, envelope.SenderId }));
-                });                
+                    // Ajoute chaque musique du propriétaire
+                    item.Value.ForEach(dataItem =>
+                    {
+                        // Crée un nouvel élément pour la ListView avec les données de la musique
+                        var listViewItem = new ListViewItem(new[]
+                        {
+                            dataItem.Title,  // Nom du fichier
+                            dataItem.Artist,  // Artiste du fichier
+                            dataItem.Type,  // Type du fichier
+                            dataItem.Duration,  // Durée du fichier
+                            envelope.SenderId  // Id de l'expéditeur
+                });
+
+                        // Ajouter l'élément à la ListView
+                        listView2.Items.Add(listViewItem);
+                    });
+                }
+            }
+            finally
+            {
+                // Réactive le rafraîchissement de la ListView
+                listView2.EndUpdate();
             }
         }
+
 
         public void getMssages()
         {
@@ -183,7 +216,7 @@ namespace WinFormsSaucisseau
                 // Subscribe to a topic
                 await mqttClient.SubscribeAsync(subscribeOptions);
 
-                await mqttClient.SubscribeAsync(clientId);
+                await mqttClient.SubscribeAsync("philippe");
 
                 // Callback function when a message is received
                 mqttClient.ApplicationMessageReceivedAsync += async e =>
@@ -232,69 +265,77 @@ namespace WinFormsSaucisseau
             try
             {
                 Debug.Write(Encoding.UTF8.GetString(message.ApplicationMessage.Payload));
-
-                GenericEnvelope enveloppe = JsonSerializer.Deserialize<GenericEnvelope>(Encoding.UTF8.GetString(message.ApplicationMessage.Payload));
-                if (enveloppe.SenderId == clientId) return;
-                switch (enveloppe.MessageType)
+                try
                 {
-                    case MessageType.ENVOIE_CATALOGUE:
-                        {
-                            EnvoieCatalogue enveloppeEnvoieCatalogue = JsonSerializer.Deserialize<EnvoieCatalogue>(enveloppe.EnveloppeJson);
+                    GenericEnvelope enveloppe = JsonSerializer.Deserialize<GenericEnvelope>(Encoding.UTF8.GetString(message.ApplicationMessage.Payload));
 
-                            // Mets à jour le catalogue de qqn ou le rajoute dans un dictionnaire
-                            if (mediaDataWithOwner.ContainsKey(enveloppe.SenderId))
+                    if (enveloppe.SenderId == clientId) return;
+                    switch (enveloppe.MessageType)
+                    {
+                        case MessageType.ENVOIE_CATALOGUE:
                             {
-                                mediaDataWithOwner[enveloppe.SenderId] = enveloppeEnvoieCatalogue.Content;
+                                EnvoieCatalogue enveloppeEnvoieCatalogue = JsonSerializer.Deserialize<EnvoieCatalogue>(enveloppe.EnvelopeJson);
+
+                                // Mets à jour le catalogue de qqn ou le rajoute dans un dictionnaire
+                                if (mediaDataWithOwner.ContainsKey(enveloppe.SenderId))
+                                {
+                                    mediaDataWithOwner[enveloppe.SenderId] = enveloppeEnvoieCatalogue.Content;
+                                }
+                                else
+                                {
+                                    mediaDataWithOwner.Add(enveloppe.SenderId, new List<MediaData>());
+                                    mediaDataWithOwner[enveloppe.SenderId] = enveloppeEnvoieCatalogue.Content;
+                                }
+
+                                updateOnlineMusic(mediaDataWithOwner, enveloppe);
+
+                                break;
                             }
-                            else
+                        case MessageType.DEMANDE_CATALOGUE:
                             {
-                                mediaDataWithOwner.Add(enveloppe.SenderId, new List<MediaData>());
-                                mediaDataWithOwner[enveloppe.SenderId] = enveloppeEnvoieCatalogue.Content;
+                                EnvoieCatalogue envoieCatalogue = new EnvoieCatalogue();
+                                envoieCatalogue.Content = list;
+                                SendMessage(mqttClient, MessageType.ENVOIE_CATALOGUE, clientId, envoieCatalogue, topic);
+                                break;
                             }
+                        case MessageType.DEMANDE_FICHIER:
+                            {
+                                DemandeFichier enveloppeDemandeFichier = JsonSerializer.Deserialize<DemandeFichier>(enveloppe.EnvelopeJson);
+                                EnvoieFichier envoiFichier = new EnvoieFichier();
 
-                            updateOnlineMusic(mediaDataWithOwner, enveloppe);
+                                envoiFichier.Content = Convert.ToBase64String(File.ReadAllBytes(dossierMusique + enveloppeDemandeFichier.FileName));
 
-                            break;
-                        }
-                    case MessageType.DEMANDE_CATALOGUE:
-                        {
-                            EnvoieCatalogue envoieCatalogue = new EnvoieCatalogue();
-                            envoieCatalogue.Content = list;
-                            SendMessage(mqttClient, MessageType.ENVOIE_CATALOGUE, clientId, envoieCatalogue, topic);
-                            break;
-                        }
-                    case MessageType.DEMANDE_FICHIER:
-                        {
-                            DemandeFichier enveloppeDemandeFichier = JsonSerializer.Deserialize<DemandeFichier>(enveloppe.EnveloppeJson);
-                            EnvoieFichier envoiFichier = new EnvoieFichier();
+                                SendMessage(mqttClient, MessageType.ENVOIE_FICHIER, clientId, enveloppeDemandeFichier, enveloppe.SenderId);
 
-                            envoiFichier.Content = Convert.ToBase64String(File.ReadAllBytes(dossierMusique + enveloppeDemandeFichier.FileName));
+                                break;
+                            }
+                        case MessageType.ENVOIE_FICHIER:
+                            {
+                                EnvoieFichier enveloppeEnvoieFichier = JsonSerializer.Deserialize<EnvoieFichier>(enveloppe.EnvelopeJson);
+                                MediaData metaData = enveloppeEnvoieFichier.FileInfo;
+                                byte[] file = Convert.FromBase64String(enveloppeEnvoieFichier.Content);
 
-                            SendMessage(mqttClient, MessageType.ENVOIE_FICHIER, clientId, enveloppeDemandeFichier, enveloppe.SenderId);
+                                string path = dossierMusique + metaData.Title + metaData.Type;
 
-                            break;
-                        }
-                    case MessageType.ENVOIE_FICHIER:
-                        {
-                            EnvoieFichier enveloppeEnvoieFichier = JsonSerializer.Deserialize<EnvoieFichier>(enveloppe.EnveloppeJson);
-                            MediaData metaData = enveloppeEnvoieFichier.FileInfo;
-                            byte[] file = Convert.FromBase64String(enveloppeEnvoieFichier.Content);
+                                File.WriteAllBytes(path, file);
 
-                            string path = dossierMusique + metaData.File_title + metaData.File_type;
+                                MessageBox.Show("Téléchargement réussi", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                            File.WriteAllBytes(path, file);
+                                updateMusicList();
 
-                            MessageBox.Show("Téléchargement réussi", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                            updateMusicList();
-
-                            break;
-                        }
+                                break;
+                            }
+                    }
                 }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.ToString());
+                }
+                
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.ToString());
+                Trace.WriteLine("wuigdiuwqgdiuqgdigq    "+ex.ToString());
             }
         }
 
@@ -302,7 +343,7 @@ namespace WinFormsSaucisseau
         {
             GenericEnvelope enveloppe = new GenericEnvelope();
             enveloppe.SenderId = senderId;
-            enveloppe.EnveloppeJson = content == null ? null : content.ToJson();
+            enveloppe.EnvelopeJson = content == null ? null : content.ToJson();
             enveloppe.MessageType = type;
             var message = new MqttApplicationMessageBuilder()
                 .WithTopic(topic)
@@ -352,6 +393,22 @@ namespace WinFormsSaucisseau
 
             SendMessage(mqttClient, MessageType.DEMANDE_CATALOGUE, clientId, null, topic);
 
+        }
+
+    // Implémentation de l'événement ItemActivate
+    private void listView2_ItemActivate(object sender, EventArgs e)
+        {
+            // Récupérer l'élément sélectionné
+            var selectedItem = listView2.SelectedItems[0];
+
+            // Accéder aux données de l'élément, par exemple, le nom du fichier
+            string fileName = selectedItem.SubItems[0].Text;  // Index de la colonne correspondante
+            string fileArtist = selectedItem.SubItems[1].Text; // Index de la colonne correspondante
+            string type = selectedItem.SubItems[2].Text;
+
+            MessageBox.Show($"Vous avez cliqué sur : {fileName}, Artiste : {fileArtist}");
+
+            SendMessage(mqttClient, MessageType.DEMANDE_FICHIER, clientId, null, selectedItem.SubItems[4].Text);
         }
     }
 }
