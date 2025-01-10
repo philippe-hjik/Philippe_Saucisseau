@@ -41,6 +41,12 @@ namespace WinFormsSaucisseau
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            updateMusicList();
+            creatConnection();
+        }
+
+        private void updateMusicList()
+        {
             // Vérifiez que le dossier existe
             if (Directory.Exists(dossierMusique))
             {
@@ -74,8 +80,6 @@ namespace WinFormsSaucisseau
                 MessageBox.Show("Le dossier spécifié n'existe pas.");
 
             }
-
-            creatConnection();
         }
 
         // Méthode pour obtenir la liste des musiques
@@ -258,6 +262,8 @@ namespace WinFormsSaucisseau
                             File.WriteAllBytes(path, file);
 
                             MessageBox.Show("Téléchargement réussi", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                            updateMusicList();
 
                             break;
                         }
