@@ -307,7 +307,7 @@ namespace WinFormsSaucisseau
 
                                 string dossierMusique = @"C:\Users\phili\Desktop\musique\";
 
-                                File.WriteAllBytes(dossierMusique, file);
+                                File.WriteAllBytes(dossierMusique + metaData.Title, file);
 
                                 MessageBox.Show("Téléchargement réussi", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
@@ -322,7 +322,6 @@ namespace WinFormsSaucisseau
 
                                 MediaData mediaData = new();
                                 mediaData.Title = askMusic.FileName;
-                                mediaData.Type = ".mp3";
 
                                 sendMusic.FileInfo = mediaData;
 
@@ -330,20 +329,6 @@ namespace WinFormsSaucisseau
 
                                 SendMessage(mqttClient, MessageType.ENVOIE_FICHIER, clientId, sendMusic, enveloppe.SenderId);
 
-
-                                /*
-                                DemandeFichier enveloppeDemandeFichier = JsonSerializer.Deserialize<DemandeFichier>(enveloppe.EnvelopeJson);
-                                EnvoieFichier envoiFichier = new();
-
-                                string dossierMusique = @"C:\Users\phili\Desktop\musiqueNon\";
-
-                                envoiFichier.Content = Convert.ToBase64String(File.ReadAllBytes(dossierMusique + enveloppeDemandeFichier.FileName));
-
-                                string nameWithoutExtension = Path.GetFileNameWithoutExtension(enveloppeDemandeFichier.FileName);
-
-                                SendMessage(mqttClient, MessageType.ENVOIE_FICHIER, clientId, envoiFichier, enveloppe.SenderId);
-                                //blue.section-inf.ch
-                                */
                                 break;
                             }
                     }
