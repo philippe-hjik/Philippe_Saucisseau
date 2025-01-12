@@ -8,7 +8,7 @@ using WinFormsSaucisseau.Classes.Interfaces;
 
 namespace WinFormsSaucisseau.Classes.Enveloppes
 {
-    public class EnvoieFichier
+    public class EnvoieFichier : IJsonSerializableMessage
     {
         /* 
             type 4 ENVOIE_FICHIER
