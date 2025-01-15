@@ -25,6 +25,16 @@ namespace WinFormsSaucisseau
             InitializeListView(listView1);
             InitializeListView(listView2);
             listView2.Columns.Add("PersonId", 150);   // Colonne pour le nom du fichier pour le download
+
+            // Vous pouvez spécifier un dossier ici
+            string user = Environment.UserName;
+            string musiqueFolder = $@"C:\Users\{user}\Desktop\musique\";
+
+            if (!Directory.Exists(musiqueFolder))
+            {
+                Directory.CreateDirectory(musiqueFolder);
+                MessageBox.Show("Création du fichier de musique : " + musiqueFolder);
+            }
         }
 
         private IMqttClient mqttClient; // Client MQTT global
@@ -38,12 +48,9 @@ namespace WinFormsSaucisseau
         string topic = "test";
         string username = "ict";
         string password = "321";
+        string musiqueFolder;
 
         private System.Windows.Forms.ListView listView2 = new System.Windows.Forms.ListView();
-
-
-        // Vous pouvez spécifier un dossier ici
-        string musiqueFolder = @"C:\Users\phili\Desktop\musique\"; // Remplacez par votre dossier
 
         List<MediaData> list;
 
