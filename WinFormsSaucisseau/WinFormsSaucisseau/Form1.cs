@@ -43,7 +43,7 @@ namespace WinFormsSaucisseau
 
 
         // Vous pouvez spécifier un dossier ici
-        string dossierMusique = @"C:\Users\phili\Desktop\musique\"; // Remplacez par votre dossier
+        string musiqueFolder = @"C:\Users\phili\Desktop\musique\"; // Remplacez par votre dossier
 
         List<MediaData> list;
 
@@ -56,10 +56,10 @@ namespace WinFormsSaucisseau
         private void updateMusicList()
         {
             // Vérifiez que le dossier existe
-            if (Directory.Exists(dossierMusique))
+            if (Directory.Exists(musiqueFolder))
             {
                 // Récupérer tous les fichiers .mp3 du dossier
-                string[] fichiersAudio = Directory.GetFiles(dossierMusique, "*.mp3");
+                string[] fichiersAudio = Directory.GetFiles(musiqueFolder, "*.mp3");
                 list = new List<MediaData>();
 
                 foreach (var fichier in fichiersAudio)
@@ -304,10 +304,7 @@ namespace WinFormsSaucisseau
                                 MediaData metaData = enveloppeEnvoieFichier.FileInfo;
                                 byte[] file = Convert.FromBase64String(enveloppeEnvoieFichier.Content);
 
-
-                                string dossierMusique = @"C:\Users\phili\Desktop\musique\";
-
-                                File.WriteAllBytes(dossierMusique + metaData.Title, file);
+                                File.WriteAllBytes(musiqueFolder + metaData.Title, file);
 
                                 MessageBox.Show("Téléchargement réussi", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
@@ -317,6 +314,7 @@ namespace WinFormsSaucisseau
                             }
                         case MessageType.DEMANDE_FICHIER:
                             {
+
                                 DemandeFichier askMusic = JsonSerializer.Deserialize<DemandeFichier>(enveloppe.EnvelopeJson);
                                 EnvoieFichier sendMusic = new();
 
@@ -325,9 +323,15 @@ namespace WinFormsSaucisseau
 
                                 sendMusic.FileInfo = mediaData;
 
-                                sendMusic.Content = Convert.ToBase64String(File.ReadAllBytes(dossierMusique + askMusic.FileName));
-
-                                SendMessage(mqttClient, MessageType.ENVOIE_FICHIER, clientId, sendMusic, enveloppe.SenderId);
+                                if (File.Exists(musiqueFolder + askMusic.FileName))
+                                {
+                                    sendMusic.Content = Convert.ToBase64String(File.ReadAllBytes(musiqueFolder + askMusic.FileName));
+                                    SendMessage(mqttClient, MessageType.ENVOIE_FICHIER, clientId, sendMusic, enveloppe.SenderId);
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Le fichier n'existe pas ou n'as pas été trouvé chemin: " + musiqueFolder + askMusic.FileName);
+                                }
 
                                 break;
                             }
@@ -337,11 +341,11 @@ namespace WinFormsSaucisseau
                 {
                     Debug.WriteLine(ex.ToString());
                 }
-                
+
             }
             catch (Exception ex)
             {
-                Trace.WriteLine("wuigdiuwqgdiuqgdigq    "+ex.ToString());
+                Trace.WriteLine("wuigdiuwqgdiuqgdigq    " + ex.ToString());
             }
         }
 
@@ -401,8 +405,8 @@ namespace WinFormsSaucisseau
 
         }
 
-    // Implémentation de l'événement ItemActivate
-    private void listView2_ItemActivate(object sender, EventArgs e)
+        // Implémentation de l'événement ItemActivate
+        private void listView2_ItemActivate(object sender, EventArgs e)
         {
             // Récupérer l'élément sélectionné
             var selectedItem = listView2.SelectedItems[0];
@@ -413,7 +417,7 @@ namespace WinFormsSaucisseau
             string type = selectedItem.SubItems[2].Text;
 
             DemandeFichier demandeFichier = new DemandeFichier();
-            demandeFichier.FileName =  fileName + type;
+            demandeFichier.FileName = fileName + type;
 
             MessageBox.Show($"Vous avez cliqué sur : {fileName}{type}, Artiste : {fileArtist}");
 
